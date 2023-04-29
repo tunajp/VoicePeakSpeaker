@@ -2,6 +2,8 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using static System.Net.Mime.MediaTypeNames;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
+using System.Threading;
 
 namespace VoicePeakSpeaker
 {
@@ -14,6 +16,7 @@ namespace VoicePeakSpeaker
         private bool closeFromStripMenu = false;
         VoicePeak vp = new VoicePeak();
         Player player = new Player();
+        private ManualResetEventSlim _waitHandle = new ManualResetEventSlim(false);
 
         [DllImport("user32.dll", SetLastError = true)]
         private extern static void AddClipboardFormatListener(IntPtr hwnd);
@@ -117,24 +120,15 @@ namespace VoicePeakSpeaker
 
                     // 140文字以内の複数ブロックにわける
                     string[] messages = MySplit(msg, 120);
+
+                    Thread t = new Thread(new ParameterizedThreadStart(this.generateThread));
+                    t.Start(messages);
+
+                    // 一個目の生成だけ待つ(二個目以降は生成のほうが先に終わる)
+                    _waitHandle.Wait();
+                    _waitHandle.Reset();
+
                     int count = 0;
-                    foreach (string message in messages)
-                    {
-                        notifyIcon1.Text = $"Generating({count+1}/{messages.Count()}) - VoicePeakSpeaker";
-                        try
-                        {
-                            bool ret = vp.generateWav(message, count);
-                            if (!ret)
-                            {
-                                notifyIcon1.Text = "Ready - VoicePeakSpeaker";
-                                return;
-                            }
-                        }
-                        catch (Exception ex) {
-                        }
-                        count++;
-                    }
-                    count = 0;
                     foreach (string message in messages)
                     {
                         notifyIcon1.Text = $"Speaking({count + 1}/{messages.Count()}) - VoicePeakSpeaker";
@@ -147,8 +141,35 @@ namespace VoicePeakSpeaker
                         }
                         count++;
                     }
+
+                    t.Join();
+                    _waitHandle.Reset(); // 溜まってるかもしれないので開放しておく
                     notifyIcon1.Text = "Ready - VoicePeakSpeaker";
                 }
+            }
+        }
+
+        private void generateThread(Object obj)
+        {
+            string[] messages = (string[])obj;
+            int count = 0;
+            foreach (string message in messages)
+            {
+                notifyIcon1.Text = $"Generating({count + 1}/{messages.Count()}) - VoicePeakSpeaker";
+                try
+                {
+                    bool ret = vp.generateWav(message, count);
+                    _waitHandle.Set();
+                    if (!ret)
+                    {
+                        notifyIcon1.Text = "Ready - VoicePeakSpeaker";
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                }
+                count++;
             }
         }
 
