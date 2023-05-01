@@ -17,6 +17,12 @@ namespace VoicePeakSpeaker
         // 後でリストで選択できるようにする
         public List<string> getNarrators()
         {
+            if (VoicePeakProgram.Length == 0)
+            {
+                MessageBox.Show("VOICEPEAK Program Error", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return new List<string>();
+            }
+
             //Processオブジェクトを作成
             System.Diagnostics.Process p = new System.Diagnostics.Process();
 
@@ -54,6 +60,11 @@ namespace VoicePeakSpeaker
         {
             //string narrator = @"Japanese Female Child";
 
+            if (VoicePeakProgram.Length == 0)
+            {
+                MessageBox.Show("VOICEPEAK Program Error", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.FileName = VoicePeakProgram;
             p.StartInfo.Arguments = $"-s \"{msg}\" -o \"{MainForm.outputDir}output{n}.wav\" -n \"{currentNarrator}\"";

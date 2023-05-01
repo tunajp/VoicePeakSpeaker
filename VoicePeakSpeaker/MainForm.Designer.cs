@@ -106,6 +106,7 @@
             VoicePeakTextBox.Name = "VoicePeakTextBox";
             VoicePeakTextBox.Size = new Size(201, 23);
             VoicePeakTextBox.TabIndex = 0;
+            VoicePeakTextBox.TextChanged += VoicePeakTextBox_TextChanged;
             // 
             // VoicePeakReferenceButton
             // 

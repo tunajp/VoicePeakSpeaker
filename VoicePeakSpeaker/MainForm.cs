@@ -36,6 +36,8 @@ namespace VoicePeakSpeaker
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             this.Opacity = 1;
+            this.TopMost = true;
+            this.TopMost = false;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -65,6 +67,8 @@ namespace VoicePeakSpeaker
         private void showMainFormToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Opacity = 1;
+            this.TopMost = true;
+            this.TopMost = false;
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -135,7 +139,8 @@ namespace VoicePeakSpeaker
                         try
                         {
                             player.PlaySound($"{outputDir}output{count}.wav");
-                        } catch(Exception e)
+                        }
+                        catch (Exception e)
                         {
 
                         }
@@ -216,6 +221,23 @@ namespace VoicePeakSpeaker
 
         private void NarratorComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
+        }
+
+        private void VoicePeakTextBox_TextChanged(object sender, EventArgs e)
+        {
+            vp.VoicePeakProgram = VoicePeakTextBox.Text;
+
+            NarratorComboBox.Items.Clear();
+
+            List<string> narrators = vp.getNarrators();
+            if (narrators.Count == 0) return;
+
+            foreach (string narrator in narrators)
+            {
+                NarratorComboBox.Items.Add(narrator);
+            }
+            NarratorComboBox.SelectedIndex = 0;
             vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
         }
 
