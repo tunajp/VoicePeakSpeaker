@@ -8,16 +8,19 @@ namespace VoicePeakSpeaker
 {
     public class VoicePeak
     {
-        public string VoicePeakProgram = @"D:\Program Files\VOICEPEAK\voicepeak.exe";
+        public string VoicePeakProgram;
         public string currentNarrator = "";
+        private Setting setting;
 
-        public VoicePeak() {
+        public VoicePeak(Setting? setting) {
+            this.setting = setting;
+            this.VoicePeakProgram = this.setting.VoicePeakProgram;
         }
 
         // 後でリストで選択できるようにする
         public List<string> getNarrators()
         {
-            if (VoicePeakProgram.Length == 0)
+            if (this.setting.VoicePeakProgram.Length == 0)
             {
                 MessageBox.Show("VOICEPEAK Program Error", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return new List<string>();
@@ -26,7 +29,7 @@ namespace VoicePeakSpeaker
             //Processオブジェクトを作成
             System.Diagnostics.Process p = new System.Diagnostics.Process();
 
-            p.StartInfo.FileName = VoicePeakProgram;
+            p.StartInfo.FileName = this.VoicePeakProgram;
             //出力を読み取れるようにする
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
@@ -67,7 +70,7 @@ namespace VoicePeakSpeaker
             }
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.FileName = VoicePeakProgram;
-            p.StartInfo.Arguments = $"-s \"{msg}\" -o \"{MainForm.outputDir}output{n}.wav\" -n \"{currentNarrator}\"";
+            p.StartInfo.Arguments = $"-s \"{msg}\" -o \"{MainForm.outputDir}output{n}.wav\" -n \"{currentNarrator}\" --speed 125";
             var result = p.Start();
             if (result == false)
             {

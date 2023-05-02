@@ -4,6 +4,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Threading;
+using System.Xml.Serialization;
 
 namespace VoicePeakSpeaker
 {
@@ -13,9 +14,10 @@ namespace VoicePeakSpeaker
 
         public static string outputDir = "";
 
-        private bool closeFromStripMenu = false;
-        VoicePeak vp = new VoicePeak();
-        Player player = new Player();
+        Setting? setting;
+        VoicePeak? vp;
+        Player? player;
+
         private ManualResetEventSlim _waitHandle = new ManualResetEventSlim(false);
 
         [DllImport("user32.dll", SetLastError = true)]
@@ -45,6 +47,23 @@ namespace VoicePeakSpeaker
             this.Opacity = 0;
             notifyIcon1.Text = "Ready - VoicePeakSpeaker";
 
+            //setting = new Setting();
+            string settingFile = System.IO.Path.GetDirectoryName(System.Windows.Forms.Application.ExecutablePath) + Path.DirectorySeparatorChar + ".setting.xml";
+
+            if (File.Exists(settingFile))
+            {
+                XmlSerializer se = new XmlSerializer(typeof(Setting));
+                StreamReader sr = new StreamReader(settingFile, new System.Text.UTF8Encoding(false));
+                setting = (Setting?)se.Deserialize(sr);
+                sr.Close();
+            } else
+            {
+                setting = new Setting();
+            }
+
+            vp = new VoicePeak(setting);
+            player = new Player();
+
             VoicePeakTextBox.Text = vp.VoicePeakProgram;
 
             outputDir = System.IO.Path.GetDirectoryName(System.Windows.Forms.Application.ExecutablePath) + Path.DirectorySeparatorChar + "output" + Path.DirectorySeparatorChar;
@@ -53,13 +72,26 @@ namespace VoicePeakSpeaker
                 Directory.CreateDirectory(outputDir);
             }
 
-            List<string> narrators = vp.getNarrators();
-            foreach (string narrator in narrators)
+            try
             {
-                NarratorComboBox.Items.Add(narrator);
+                NarratorComboBox.Items.Clear();
+                List<string> narrators = vp.getNarrators();
+                foreach (string narrator in narrators)
+                {
+                    NarratorComboBox.Items.Add(narrator);
+                }
+                if (setting.CurrentNarrator < narrators.Count())
+                {
+                    NarratorComboBox.SelectedIndex = setting.CurrentNarrator;
+                } else
+                {
+                    NarratorComboBox.SelectedIndex = 0;
+                }
+                vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
+            } catch(Exception ex)
+            {
+
             }
-            NarratorComboBox.SelectedIndex = 0;
-            vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
 
             AddClipboardFormatListener(Handle);
         }
@@ -221,24 +253,57 @@ namespace VoicePeakSpeaker
 
         private void NarratorComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            setting.CurrentNarrator = NarratorComboBox.SelectedIndex;
+            XmlSerializer se = new XmlSerializer(typeof(Setting));
+            try
+            {
+                string settingFile = System.IO.Path.GetDirectoryName(System.Windows.Forms.Application.ExecutablePath) + Path.DirectorySeparatorChar + ".setting.xml";
+                StreamWriter sw = new StreamWriter(settingFile, false, new System.Text.UTF8Encoding(false));
+                se.Serialize(sw, setting);
+                sw.Close();
+            }
+            catch (Exception ex)
+            {
+
+            }
+
             vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
         }
 
         private void VoicePeakTextBox_TextChanged(object sender, EventArgs e)
         {
+            this.setting.VoicePeakProgram = VoicePeakTextBox.Text;
+            XmlSerializer se = new XmlSerializer(typeof(Setting));
+            try
+            {
+                string settingFile = System.IO.Path.GetDirectoryName(System.Windows.Forms.Application.ExecutablePath) + Path.DirectorySeparatorChar + ".setting.xml";
+                StreamWriter sw = new StreamWriter(settingFile, false, new System.Text.UTF8Encoding(false));
+                se.Serialize(sw, setting);
+                sw.Close();
+            } catch(Exception ex)
+            {
+
+            }
+
             vp.VoicePeakProgram = VoicePeakTextBox.Text;
 
             NarratorComboBox.Items.Clear();
 
-            List<string> narrators = vp.getNarrators();
-            if (narrators.Count == 0) return;
-
-            foreach (string narrator in narrators)
+            try
             {
-                NarratorComboBox.Items.Add(narrator);
+                List<string> narrators = vp.getNarrators();
+                if (narrators.Count == 0) return;
+
+                foreach (string narrator in narrators)
+                {
+                    NarratorComboBox.Items.Add(narrator);
+                }
+                NarratorComboBox.SelectedIndex = setting.CurrentNarrator;
+                vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
             }
-            NarratorComboBox.SelectedIndex = 0;
-            vp.currentNarrator = NarratorComboBox.SelectedItem.ToString();
+            catch (Exception ex)
+            {
+            }
         }
 
         private void VoicePeakReferenceButton_Click(object sender, EventArgs e)
