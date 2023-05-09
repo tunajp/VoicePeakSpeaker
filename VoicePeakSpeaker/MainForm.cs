@@ -145,6 +145,7 @@ namespace VoicePeakSpeaker
                 }
                 else
                 {
+                    _waitHandle.Reset();
                     // 日本語を含まないメッセージを読み上げない
                     var isJapanese = Regex.IsMatch(msg, @"[\p{IsHiragana}\p{IsKatakana}\p{IsCJKUnifiedIdeographs}]+");
                     if (!isJapanese)
